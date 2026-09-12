@@ -213,8 +213,12 @@ export async function createSession(
   }
 
   // Without Cache Components this route is prerendered, so newly created games
-  // and players would not show up in the lists until the next build.
+  // and players would not show up in the lists until the next build. The other
+  // two pages are request-time rendered, but revalidating them drops any stale
+  // payload the client router is holding.
   revalidatePath("/sessions/new");
+  revalidatePath("/sessions");
+  revalidatePath("/standings");
 
   const winnerCount = played.filter((row) => row.won).length;
   return {

@@ -1,7 +1,38 @@
 import { connection } from "next/server";
 
 import { supabase } from "@/lib/supabase";
-import type { Game, Player } from "@/lib/types";
+import type {
+  Game,
+  Player,
+  SessionSummary,
+  StandingRow,
+} from "@/lib/types";
+
+/**
+ * The client is created without a `Database` generic, so postgrest-js types
+ * every embedded resource as an array — including to-one embeds like `games`,
+ * which actually arrive as a bare object. That makes `.overrideTypes` on nested
+ * selects load-bearing rather than cosmetic: it is the only schema contract in
+ * the codebase, and it is a pure compile-time cast with no runtime validation.
+ * Both shapes below were verified against the live database.
+ */
+type SessionFeedRow = {
+  id: number;
+  played_on: string;
+  games: { name: string } | null;
+  results: { won: boolean; players: { id: number; name: string } | null }[];
+};
+
+type StandingsQueryRow = {
+  id: number;
+  name: string;
+  results: { won: boolean }[];
+};
+
+/** Stored names can carry stray whitespace (e.g. "Catan\n"). */
+function clean(name: string | undefined | null) {
+  return (name ?? "").trim();
+}
 
 /**
  * Cache Components is off, so a page reading these would otherwise be
@@ -32,4 +63,77 @@ export async function getPlayers(): Promise<Player[]> {
 
   if (error) throw new Error(`Could not load players: ${error.message}`);
   return data ?? [];
+}
+
+/** Past sessions, newest first, with the game and everyone who played. */
+export async function getSessions(): Promise<SessionSummary[]> {
+  await connection();
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select("id, played_on, games(name), results(won, players(id, name))")
+    .order("played_on", { ascending: false })
+    // played_on is a date, so same-day sessions would otherwise come back in
+    // arbitrary order.
+    .order("id", { ascending: false })
+    .overrideTypes<SessionFeedRow[], { merge: false }>();
+
+  if (error) throw new Error(`Could not load sessions: ${error.message}`);
+
+  return (data ?? []).map((session) => ({
+    id: session.id,
+    playedOn: session.played_on,
+    gameName: clean(session.games?.name) || "Unknown game",
+    players: session.results
+      .flatMap((result) =>
+        result.players
+          ? [
+              {
+                id: result.players.id,
+                name: clean(result.players.name),
+                won: result.won,
+              },
+            ]
+          : [],
+      )
+      .sort(
+        (a, b) =>
+          Number(b.won) - Number(a.won) || a.name.localeCompare(b.name),
+      ),
+  }));
+}
+
+/** Wins per player. */
+export async function getStandings(): Promise<StandingRow[]> {
+  await connection();
+
+  // Anchored on `players` with a plain embed so that players with no results —
+  // and players who have played but never won — are still returned. Using
+  // `results!inner(won)` or filtering on `results.won` would drop them.
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, name, results(won)")
+    .order("name")
+    .overrideTypes<StandingsQueryRow[], { merge: false }>();
+
+  if (error) throw new Error(`Could not load standings: ${error.message}`);
+
+  return (data ?? [])
+    .map((player) => {
+      const played = player.results.length;
+      const wins = player.results.filter((result) => result.won).length;
+      return {
+        id: player.id,
+        name: clean(player.name),
+        wins,
+        played,
+        winRate: played === 0 ? null : wins / played,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.wins - a.wins ||
+        (b.winRate ?? -1) - (a.winRate ?? -1) ||
+        a.name.localeCompare(b.name),
+    );
 }
