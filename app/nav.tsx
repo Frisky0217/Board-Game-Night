@@ -14,11 +14,11 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-black/[.06] font-sans dark:border-white/[.1]">
+    <header className="border-b border-foreground/10 bg-surface font-sans">
       <nav className="mx-auto flex w-full max-w-3xl items-center gap-1 px-6">
         <Link
           href="/"
-          className="mr-auto py-4 text-base font-semibold tracking-tight"
+          className="display-face mr-auto py-4 text-lg font-semibold"
         >
           Game Night
         </Link>
@@ -33,8 +33,10 @@ export function Nav() {
               href={link.href}
               aria-current={active ? "page" : undefined}
               className={
-                "flex min-h-12 items-center rounded-full px-3 text-sm font-medium transition-colors " +
-                (active ? "text-accent" : "opacity-60 hover:opacity-100")
+                "edge-pill flex min-h-12 items-center px-3 text-sm font-medium transition-colors " +
+                (active
+                  ? "text-accent"
+                  : "text-foreground/60 hover:text-foreground")
               }
             >
               {link.label}

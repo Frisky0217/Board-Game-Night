@@ -18,8 +18,8 @@ function todayLocal() {
 }
 
 const fieldClass =
-  "h-12 w-full rounded-xl border border-black/[.12] bg-transparent px-4 text-base " +
-  "outline-none focus:border-accent focus:ring-2 focus:ring-accent/40 dark:border-white/[.16]";
+  "edge-soft h-12 w-full border border-foreground/15 bg-surface px-4 text-base " +
+  "outline-none focus:border-accent focus:ring-2 focus:ring-accent/40";
 
 export function SessionForm({
   games,
@@ -49,7 +49,7 @@ export function SessionForm({
         <button
           type="submit"
           disabled={pending}
-          className="h-12 w-full rounded-full bg-accent px-6 text-base font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="edge-pill h-12 w-full bg-accent px-6 text-base font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save session"}
         </button>
@@ -61,7 +61,7 @@ export function SessionForm({
           aria-live="polite"
           className={
             state.status === "error"
-              ? "text-sm text-red-600 dark:text-red-400"
+              ? "text-sm text-rust"
               : "text-sm text-accent"
           }
         >
@@ -169,7 +169,7 @@ function SessionFields({
         <legend className="mb-2 text-sm font-medium">Who played</legend>
 
         {players.length === 0 && newPlayers.length === 0 && (
-          <p className="text-sm opacity-60">
+          <p className="text-sm text-foreground/60">
             No players yet — add the first one below.
           </p>
         )}
@@ -179,7 +179,7 @@ function SessionFields({
           return (
             <div
               key={player.id}
-              className="flex items-center justify-between gap-3 border-b border-black/[.06] py-1 dark:border-white/[.1]"
+              className="flex items-center justify-between gap-3 border-b border-foreground/10 py-1"
             >
               <label className="flex min-h-12 flex-1 cursor-pointer items-center gap-3">
                 <input
@@ -202,10 +202,10 @@ function SessionFields({
                     aria-pressed={winners.includes(player.id)}
                     disabled={pending}
                     className={
-                      "h-10 shrink-0 rounded-full px-4 text-sm font-medium transition-colors " +
+                      "edge-pill h-10 shrink-0 px-4 text-sm font-medium transition-colors " +
                       (winners.includes(player.id)
-                        ? "bg-accent text-accent-foreground"
-                        : "border border-black/[.12] dark:border-white/[.16]")
+                        ? "bg-gold text-background"
+                        : "border border-foreground/15 bg-surface")
                     }
                   >
                     Won
@@ -226,11 +226,11 @@ function SessionFields({
         {newPlayers.map((player, index) => (
           <div
             key={player.name}
-            className="flex items-center justify-between gap-3 border-b border-black/[.06] py-1 dark:border-white/[.1]"
+            className="flex items-center justify-between gap-3 border-b border-foreground/10 py-1"
           >
             <span className="flex min-h-12 flex-1 items-center gap-3 text-base">
               {player.name}
-              <span className="text-xs uppercase tracking-wide opacity-50">
+              <span className="text-xs uppercase tracking-wide text-foreground/50">
                 new
               </span>
             </span>
@@ -245,10 +245,10 @@ function SessionFields({
               aria-pressed={player.won}
               disabled={pending}
               className={
-                "h-10 shrink-0 rounded-full px-4 text-sm font-medium transition-colors " +
+                "edge-pill h-10 shrink-0 px-4 text-sm font-medium transition-colors " +
                 (player.won
-                  ? "bg-accent text-accent-foreground"
-                  : "border border-black/[.12] dark:border-white/[.16]")
+                  ? "bg-gold text-background"
+                  : "border border-foreground/15 bg-surface")
               }
             >
               Won
@@ -261,7 +261,7 @@ function SessionFields({
               }
               disabled={pending}
               aria-label={`Remove ${player.name}`}
-              className="h-10 shrink-0 px-2 text-lg opacity-50 hover:opacity-100"
+              className="h-10 shrink-0 px-2 text-lg text-foreground/50 hover:text-rust"
             >
               ×
             </button>
@@ -296,7 +296,7 @@ function SessionFields({
             type="button"
             onClick={addPlayer}
             disabled={pending}
-            className="h-12 shrink-0 rounded-xl border border-black/[.12] px-5 text-base font-medium dark:border-white/[.16]"
+            className="edge-soft-b h-12 shrink-0 border border-foreground/15 bg-surface px-5 text-base font-medium"
           >
             Add
           </button>

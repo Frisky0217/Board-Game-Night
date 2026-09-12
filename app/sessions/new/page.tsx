@@ -12,7 +12,7 @@ export default async function NewSessionPage() {
   return (
     <div className="flex flex-1 flex-col items-center font-sans">
       <main className="w-full max-w-3xl px-6 py-10 sm:py-16">
-        <h1 className="mb-8 text-3xl font-semibold tracking-tight">
+        <h1 className="display-face mb-8 text-4xl font-semibold">
           Add a session
         </h1>
         <SessionForm games={games} players={players} />

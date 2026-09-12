@@ -13,12 +13,10 @@ export default async function StandingsPage() {
   return (
     <div className="flex flex-1 flex-col items-center font-sans">
       <main className="w-full max-w-3xl px-6 py-10 sm:py-16">
-        <h1 className="mb-8 text-3xl font-semibold tracking-tight">
-          Standings
-        </h1>
+        <h1 className="display-face mb-8 text-4xl font-semibold">Standings</h1>
 
         {standings.length === 0 ? (
-          <p className="text-base opacity-60">
+          <p className="text-base text-foreground/60">
             No players yet —{" "}
             <Link href="/sessions/new" className="text-accent underline">
               add a session
@@ -28,7 +26,7 @@ export default async function StandingsPage() {
         ) : (
           <table className="w-full border-collapse text-base">
             <thead>
-              <tr className="border-b border-black/[.12] text-sm opacity-60 dark:border-white/[.16]">
+              <tr className="border-b border-foreground/15 text-sm text-foreground/60">
                 <th scope="col" className="py-2 text-left font-medium">
                   Player
                 </th>
@@ -47,7 +45,7 @@ export default async function StandingsPage() {
               {standings.map((row, index) => (
                 <tr
                   key={row.id}
-                  className="border-b border-black/[.06] dark:border-white/[.1]"
+                  className="border-b border-foreground/10"
                 >
                   <th
                     scope="row"
@@ -56,17 +54,17 @@ export default async function StandingsPage() {
                       // Only a genuine leader is emphasized: with everyone on
                       // zero wins there is nothing to celebrate.
                       (index === 0 && row.wins > 0
-                        ? "font-medium text-accent"
+                        ? "font-medium text-gold"
                         : "")
                     }
                   >
                     {row.name}
                   </th>
                   <td className="py-3 text-right tabular-nums">{row.wins}</td>
-                  <td className="py-3 text-right tabular-nums opacity-70">
+                  <td className="py-3 text-right tabular-nums text-foreground/70">
                     {row.played}
                   </td>
-                  <td className="py-3 text-right tabular-nums opacity-70">
+                  <td className="py-3 text-right tabular-nums text-foreground/70">
                     {formatWinRate(row.winRate)}
                   </td>
                 </tr>
