@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { connection } from "next/server";
 
 import { supabase } from "@/lib/supabase";
@@ -19,6 +21,7 @@ import type {
 type SessionFeedRow = {
   id: number;
   played_on: string;
+  game_id: number;
   games: { name: string } | null;
   results: { won: boolean; players: { id: number; name: string } | null }[];
 };
@@ -41,7 +44,12 @@ function clean(name: string | undefined | null) {
  * directly in Supabase Studio). Opting into request-time rendering here means
  * every page that reads game night data inherits it.
  */
-export async function getGames(): Promise<Game[]> {
+/**
+ * Wrapped in React `cache` because both the root layout (for the ribbon rail)
+ * and the chronicle page (to resolve the ?game= filter) need the game list —
+ * this way one request issues one query instead of two.
+ */
+export const getGames = cache(async function getGames(): Promise<Game[]> {
   await connection();
 
   const { data, error } = await supabase
@@ -50,8 +58,8 @@ export async function getGames(): Promise<Game[]> {
     .order("name");
 
   if (error) throw new Error(`Could not load games: ${error.message}`);
-  return data ?? [];
-}
+  return (data ?? []).map((game) => ({ id: game.id, name: clean(game.name) }));
+});
 
 export async function getPlayers(): Promise<Player[]> {
   await connection();
@@ -65,24 +73,39 @@ export async function getPlayers(): Promise<Player[]> {
   return data ?? [];
 }
 
-/** Past sessions, newest first, with the game and everyone who played. */
-export async function getSessions(): Promise<SessionSummary[]> {
+/**
+ * Past sessions, newest first, with the game and everyone who played.
+ * Pass `gameId` to narrow the chronicle to one game's section.
+ */
+export async function getSessions(
+  options: { gameId?: number } = {},
+): Promise<SessionSummary[]> {
   await connection();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("sessions")
-    .select("id, played_on, games(name), results(won, players(id, name))")
+    .select("id, played_on, game_id, games(name), results(won, players(id, name))")
     .order("played_on", { ascending: false })
     // played_on is a date, so same-day sessions would otherwise come back in
     // arbitrary order.
-    .order("id", { ascending: false })
-    .overrideTypes<SessionFeedRow[], { merge: false }>();
+    .order("id", { ascending: false });
+
+  if (options.gameId !== undefined) {
+    query = query.eq("game_id", options.gameId);
+  }
+
+  // overrideTypes returns the base builder, so it has to come last.
+  const { data, error } = await query.overrideTypes<
+    SessionFeedRow[],
+    { merge: false }
+  >();
 
   if (error) throw new Error(`Could not load sessions: ${error.message}`);
 
   return (data ?? []).map((session) => ({
     id: session.id,
     playedOn: session.played_on,
+    gameId: session.game_id,
     gameName: clean(session.games?.name) || "Unknown game",
     players: session.results
       .flatMap((result) =>

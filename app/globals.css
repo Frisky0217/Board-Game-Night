@@ -1,22 +1,33 @@
 @import "tailwindcss";
 
-/* Woodland storybook palette: warm parchment, ink brown, moss, rust, muted gold. */
+/* The Archive. Three layers only, per the spec: the desk the book rests on, the
+   board (its cover edge), and the page itself. */
 :root {
-  --background: #f4ecd8;
+  --background: #14100d;
+  --board: #2b211a;
+  --page: #f4ecd8;
   --surface: #faf4e6;
   --foreground: #3b2f2a;
-  /* Moss is deliberately dark so one token works both as a fill (with cream text
-     on it) and as small text on parchment. */
   --accent: #4f6b40;
   --accent-foreground: #f7f1e3;
-  /* Darker than "gold" suggests: winner names render at 16px, and a bright gold
-     on cream falls below the contrast a name needs to stay readable. */
   --gold: #8a6220;
   --rust: #a24b32;
+
+  /* A small curated set rather than a hue computed from the game id: a free
+     hue rotation lands on cyans and violets that fight the earthy palette.
+     With many games these repeat, but position and the name disambiguate. */
+  --ribbon-1: #5f7a4e;
+  --ribbon-2: #a24b32;
+  --ribbon-3: #a8792c;
+  --ribbon-4: #7d6221;
+  --ribbon-5: #3f5668;
+  --ribbon-6: #6b4356;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-board: var(--board);
+  --color-page: var(--page);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
@@ -29,18 +40,26 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #241e1a;
+    --background: #0b0908;
+    --board: #1a1512;
+    --page: #241e1a;
     --surface: #2e2721;
     --foreground: #e8dcc4;
     --accent: #9dba86;
     --accent-foreground: #1e2719;
     --gold: #d9b26a;
     --rust: #d98a6e;
+
+    --ribbon-1: #7f9a6e;
+    --ribbon-2: #c26b52;
+    --ribbon-3: #c8994c;
+    --ribbon-4: #9d8241;
+    --ribbon-5: #5f7688;
+    --ribbon-6: #8b6376;
   }
 }
 
-/* Hand-drawn edges. Two variants so repeated elements don't all wobble the same
-   way — uniform asymmetry reads as a mistake, varied asymmetry reads as drawn. */
+/* Hand-drawn edges, kept from the previous pass. */
 @utility edge-soft {
   border-radius: 1.1rem 1.5rem 1.2rem 1.4rem;
 }
@@ -62,6 +81,118 @@
     "SOFT" 45,
     "WONK" 1,
     "opsz" 40;
+}
+
+/* The page: aged paper. Both decorative layers are pseudo-elements and both are
+   pointer-events: none, so no ornament can ever swallow a tap. Ornament lives at
+   the edges — the centre of the page stays clean. */
+@utility page-surface {
+  position: relative;
+  background-color: var(--page);
+  isolation: isolate;
+
+  /* Foxing: warm blooms weighted toward the edges, never the middle. */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image:
+      radial-gradient(
+        ellipse 12rem 8rem at 4% 12%,
+        rgb(138 98 32 / 0.07),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 9rem 11rem at 97% 34%,
+        rgb(162 75 50 / 0.06),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 14rem 7rem at 88% 91%,
+        rgb(138 98 32 / 0.06),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 8rem 8rem at 12% 82%,
+        rgb(59 47 42 / 0.05),
+        transparent 70%
+      );
+  }
+
+  /* Grain, warm directional light from above, and edge wear. The turbulence
+     tile is small and repeats; opacity is low enough that it reads as paper
+     rather than noise. Legibility beats atmosphere. */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image:
+      radial-gradient(
+        ellipse 120% 80% at 50% -10%,
+        rgb(255 246 214 / 0.5),
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 100% 100% at 50% 50%,
+        transparent 55%,
+        rgb(43 33 26 / 0.16) 100%
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.32'/%3E%3C/svg%3E");
+    background-size:
+      100% 100%,
+      100% 100%,
+      120px 120px;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Multiply over a dark page would crush it to black; lighten the grain
+     instead so the texture still reads. */
+  .page-surface::after {
+    mix-blend-mode: soft-light;
+    opacity: 0.4;
+  }
+}
+
+/* The gutter: a soft shadow down the left edge where the page meets the spine. */
+@utility page-gutter {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  z-index: -1;
+  background-image: linear-gradient(
+    to right,
+    rgb(43 33 26 / 0.28),
+    rgb(43 33 26 / 0.08) 45%,
+    transparent 100%
+  );
+}
+
+/* Content raised ON the page: real shadow, no flat border. */
+@utility on-page {
+  background-color: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(43 33 26 / 0.1),
+    0 4px 12px -4px rgb(43 33 26 / 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 body {

@@ -5,22 +5,22 @@ import { usePathname } from "next/navigation";
 
 // A client component purely so the current route can be highlighted.
 const LINKS = [
-  { href: "/sessions", label: "Sessions" },
-  { href: "/standings", label: "Standings" },
-  { href: "/sessions/new", label: "Add" },
+  { href: "/sessions", label: "The Chronicle" },
+  { href: "/standings", label: "The Tally" },
+  { href: "/sessions/new", label: "Record an entry" },
 ] as const;
 
 export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-foreground/10 bg-surface font-sans">
-      <nav className="mx-auto flex w-full max-w-3xl items-center gap-1 px-6">
+    <header className="px-6 pr-16 pl-8 pt-6 sm:pr-20 sm:pl-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-wrap items-baseline gap-x-5 gap-y-1 border-b border-foreground/15 pb-3">
         <Link
           href="/"
-          className="display-face mr-auto py-4 text-lg font-semibold"
+          className="display-face mr-auto text-lg font-semibold tracking-wide"
         >
-          Game Night
+          The Archive
         </Link>
 
         {LINKS.map((link) => {
@@ -33,17 +33,17 @@ export function Nav() {
               href={link.href}
               aria-current={active ? "page" : undefined}
               className={
-                "edge-pill flex min-h-12 items-center px-3 text-sm font-medium transition-colors " +
+                "display-face py-1 text-sm transition-colors " +
                 (active
-                  ? "text-accent"
-                  : "text-foreground/60 hover:text-foreground")
+                  ? "text-accent underline decoration-accent/40 underline-offset-4"
+                  : "text-foreground/55 hover:text-foreground")
               }
             >
               {link.label}
             </Link>
           );
         })}
-      </nav>
+      </div>
     </header>
   );
 }

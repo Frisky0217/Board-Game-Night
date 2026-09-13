@@ -35,6 +35,7 @@ export type SessionSummary = {
   id: number;
   /** Raw YYYY-MM-DD, formatted at render time. */
   playedOn: string;
+  gameId: number;
   gameName: string;
   players: SessionPlayer[];
 };

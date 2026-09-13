@@ -3,20 +3,18 @@ import { getGames, getPlayers } from "@/lib/queries";
 import { SessionForm } from "./session-form";
 
 export const metadata = {
-  title: "Add a session · Game Night",
+  title: "Record an entry · The Archive",
 };
 
-export default async function NewSessionPage() {
+export default async function RecordEntryPage() {
   const [games, players] = await Promise.all([getGames(), getPlayers()]);
 
   return (
-    <div className="flex flex-1 flex-col items-center font-sans">
-      <main className="w-full max-w-3xl px-6 py-10 sm:py-16">
-        <h1 className="display-face mb-8 text-4xl font-semibold">
-          Add a session
-        </h1>
-        <SessionForm games={games} players={players} />
-      </main>
-    </div>
+    <>
+      <h1 className="display-face mb-8 text-4xl font-semibold">
+        Record an entry
+      </h1>
+      <SessionForm games={games} players={players} />
+    </>
   );
 }

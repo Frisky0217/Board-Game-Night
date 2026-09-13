@@ -18,7 +18,7 @@ function todayLocal() {
 }
 
 const fieldClass =
-  "edge-soft h-12 w-full border border-foreground/15 bg-surface px-4 text-base " +
+  "edge-soft on-page h-12 w-full px-4 text-base " +
   "outline-none focus:border-accent focus:ring-2 focus:ring-accent/40";
 
 export function SessionForm({
@@ -51,7 +51,7 @@ export function SessionForm({
           disabled={pending}
           className="edge-pill h-12 w-full bg-accent px-6 text-base font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save session"}
+          {pending ? "Inscribing…" : "Set it down"}
         </button>
 
         {/* Rendered outside the keyed subtree so the confirmation survives the
@@ -118,7 +118,7 @@ function SessionFields({
   return (
     <>
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Date</span>
+        <span className="text-sm font-medium">The date</span>
         <input
           type="date"
           name="played_on"
@@ -135,7 +135,7 @@ function SessionFields({
 
       <div className="flex flex-col gap-2">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Game</span>
+          <span className="text-sm font-medium">The game</span>
           <select
             name="game_id"
             value={gameId}
@@ -166,11 +166,11 @@ function SessionFields({
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-sm font-medium">Who played</legend>
+        <legend className="mb-2 text-sm font-medium">Whose hands</legend>
 
         {players.length === 0 && newPlayers.length === 0 && (
           <p className="text-sm text-foreground/60">
-            No players yet — add the first one below.
+            No one has been named yet — set down the first below.
           </p>
         )}
 
@@ -205,7 +205,7 @@ function SessionFields({
                       "edge-pill h-10 shrink-0 px-4 text-sm font-medium transition-colors " +
                       (winners.includes(player.id)
                         ? "bg-gold text-background"
-                        : "border border-foreground/15 bg-surface")
+                        : "on-page")
                     }
                   >
                     Won
@@ -248,7 +248,7 @@ function SessionFields({
                 "edge-pill h-10 shrink-0 px-4 text-sm font-medium transition-colors " +
                 (player.won
                   ? "bg-gold text-background"
-                  : "border border-foreground/15 bg-surface")
+                  : "on-page")
               }
             >
               Won
@@ -288,7 +288,7 @@ function SessionFields({
                 addPlayer();
               }
             }}
-            placeholder="Add someone new"
+            placeholder="Name someone new"
             disabled={pending}
             className={fieldClass}
           />
@@ -296,7 +296,7 @@ function SessionFields({
             type="button"
             onClick={addPlayer}
             disabled={pending}
-            className="edge-soft-b h-12 shrink-0 border border-foreground/15 bg-surface px-5 text-base font-medium"
+            className="edge-soft-b on-page h-12 shrink-0 px-5 text-base font-medium"
           >
             Add
           </button>
