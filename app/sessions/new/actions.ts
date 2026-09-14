@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { supabase } from "@/lib/supabase";
-import type { Game, Player } from "@/lib/types";
+import type { Player } from "@/lib/types";
 
 export type State = {
   status: "idle" | "error" | "success";
@@ -52,7 +52,6 @@ export async function createSession(
 
   const playedOn = String(formData.get("played_on") ?? "").trim();
   const rawGameId = String(formData.get("game_id") ?? "").trim();
-  const newGameName = String(formData.get("new_game_name") ?? "").trim();
 
   const playerIds = formData.getAll("player_ids").map(toId);
   const winnerIdList = formData.getAll("winner_ids").map(toId);
@@ -75,12 +74,11 @@ export async function createSession(
   const existingPlayerIds = playerIds as number[];
   const winnerIds = new Set(winnerIdList as number[]);
 
-  const wantsNewGame = rawGameId === "__new__";
+  // Titles enter the book through the Index, so a session can only name a game
+  // that already exists.
   if (!rawGameId) return fail("Pick a game.");
-  if (wantsNewGame && !newGameName) return fail("Name the new game.");
-
-  const selectedGameId = wantsNewGame ? null : toId(rawGameId);
-  if (!wantsNewGame && selectedGameId === null) {
+  const gameId = toId(rawGameId);
+  if (gameId === null) {
     return fail("That game selection was malformed — reload and try again.");
   }
 
@@ -109,17 +107,7 @@ export async function createSession(
     }
   }
 
-  // Guard against creating games/players that duplicate an existing row.
-  if (wantsNewGame) {
-    const { data, error } = await supabase.from("games").select("name");
-    if (error) return fail(`Could not check existing games: ${error.message}`);
-
-    const taken = new Set((data ?? []).map((row) => fingerprint(row.name)));
-    if (taken.has(fingerprint(newGameName))) {
-      return fail(`"${newGameName}" already exists — pick it from the list.`);
-    }
-  }
-
+  // Guard against creating a player that duplicates an existing row.
   if (uniqueNewNames.length > 0) {
     const { data, error } = await supabase.from("players").select("name");
     if (error) return fail(`Could not check existing players: ${error.message}`);
@@ -131,24 +119,7 @@ export async function createSession(
     }
   }
 
-  // 1. Resolve the game.
-  let gameId = selectedGameId;
-  if (wantsNewGame) {
-    const { data, error } = await supabase
-      .from("games")
-      .insert({ name: newGameName })
-      .select("id")
-      .single<Pick<Game, "id">>();
-
-    if (error || !data) {
-      return fail(
-        `Could not create the game: ${error?.message ?? "unknown error"}`,
-      );
-    }
-    gameId = data.id;
-  }
-
-  // 2. Create any new players, remembering which of them won.
+  // 1. Create any new players, remembering which of them won.
   const played: { player_id: number; won: boolean }[] = existingPlayerIds.map(
     (id) => ({ player_id: id, won: winnerIds.has(id) }),
   );
@@ -174,7 +145,7 @@ export async function createSession(
     }
   }
 
-  // 3. Create the session.
+  // 2. Create the session.
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
     .insert({ played_on: playedOn, game_id: gameId })
@@ -187,7 +158,7 @@ export async function createSession(
     );
   }
 
-  // 4. Create one result row per player who played.
+  // 3. Create one result row per player who played.
   const { error: resultsError } = await supabase
     .from("results")
     .insert(played.map((row) => ({ session_id: session.id, ...row })));
@@ -219,6 +190,9 @@ export async function createSession(
   revalidatePath("/sessions/new");
   revalidatePath("/sessions");
   revalidatePath("/standings");
+  // The Index shows how many nights each title holds, so it changes too.
+  revalidatePath("/");
+  revalidatePath(`/games/${gameId}`);
 
   const winnerCount = played.filter((row) => row.won).length;
   return {

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 
 import { supabase } from "@/lib/supabase";
 import type {
+  ContentsEntry,
   Game,
   Player,
   SessionSummary,
@@ -32,8 +33,18 @@ type StandingsQueryRow = {
   results: { won: boolean }[];
 };
 
-/** Stored names can carry stray whitespace (e.g. "Catan\n"). */
-function clean(name: string | undefined | null) {
+type ContentsQueryRow = {
+  id: number;
+  name: string;
+  sessions: { count: number }[];
+};
+
+/**
+ * Stored names can carry stray whitespace (e.g. "Catan\n"). Exported so that
+ * actions comparing a typed title against stored ones use the same notion of
+ * "the same name" rather than a second, drifting definition.
+ */
+export function clean(name: string | undefined | null) {
   return (name ?? "").trim();
 }
 
@@ -71,6 +82,45 @@ export async function getPlayers(): Promise<Player[]> {
 
   if (error) throw new Error(`Could not load players: ${error.message}`);
   return data ?? [];
+}
+
+/**
+ * The Index: every title in the contents, with how many nights it holds.
+ *
+ * One query rather than one per game — the embedded aggregate comes back as
+ * `sessions: [{ count: N }]`. A plain embed, so a title added to the contents
+ * but never played still appears, with a count of zero.
+ */
+export async function getContents(): Promise<ContentsEntry[]> {
+  await connection();
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("id, name, sessions(count)")
+    .order("name")
+    .overrideTypes<ContentsQueryRow[], { merge: false }>();
+
+  if (error) throw new Error(`Could not load the contents: ${error.message}`);
+
+  return (data ?? []).map((game) => ({
+    id: game.id,
+    name: clean(game.name),
+    nights: game.sessions[0]?.count ?? 0,
+  }));
+}
+
+/** A single title, or null when the id matches nothing. */
+export async function getGame(id: number): Promise<Game | null> {
+  await connection();
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("id, name")
+    .eq("id", id)
+    .maybeSingle<Game>();
+
+  if (error) throw new Error(`Could not load the game: ${error.message}`);
+  return data ? { id: data.id, name: clean(data.name) } : null;
 }
 
 /**

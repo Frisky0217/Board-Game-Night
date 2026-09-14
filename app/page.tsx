@@ -1,61 +1,49 @@
 import Link from "next/link";
 
-const DESTINATIONS = [
-  {
-    href: "/sessions/new",
-    label: "Record an entry",
-    description: "Set down tonight's game",
-    primary: true,
-  },
-  {
-    href: "/sessions",
-    label: "The Chronicle",
-    description: "Every night set down so far",
-    primary: false,
-  },
-  {
-    href: "/standings",
-    label: "The Tally",
-    description: "Hands won, by player",
-    primary: false,
-  },
-] as const;
+import { getContents } from "@/lib/queries";
 
-export default function Home() {
+import { IndexForm } from "./index-form";
+
+export default async function IndexPage() {
+  const contents = await getContents();
+
   return (
     <>
-      <h1 className="display-face text-4xl font-semibold">The Archive</h1>
+      <h1 className="display-face text-4xl font-semibold">The Index</h1>
       <p className="mt-3 text-base text-foreground/60">
-        A record of game nights. Anyone holding the link may set one down.
+        Every game set down in this book.
       </p>
 
-      {/* Block flow, not column flex: a column flex container fragments badly
-          in multicol and would be clipped instead of flowing to the next page. */}
-      <div className="mt-8 space-y-3">
-        {DESTINATIONS.map((destination) => (
-          <Link
-            key={destination.href}
-            href={destination.href}
-            className={
-              "flex min-h-16 flex-col justify-center px-5 py-3 transition-opacity hover:opacity-90 " +
-              (destination.primary
-                ? "edge-soft bg-accent text-accent-foreground shadow-[0_2px_10px_-2px_rgb(43_33_26/0.35)]"
-                : "edge-soft-b on-page")
-            }
-          >
-            <span className="text-base font-medium">{destination.label}</span>
-            <span
-              className={
-                "text-sm " +
-                (destination.primary
-                  ? "text-accent-foreground/80"
-                  : "text-foreground/60")
-              }
-            >
-              {destination.description}
-            </span>
-          </Link>
-        ))}
+      {contents.length === 0 ? (
+        <p className="mt-8 text-base text-foreground/60">
+          Nothing has been recorded here yet. Write the first title below.
+        </p>
+      ) : (
+        <ul className="mt-8 space-y-1">
+          {contents.map((entry) => (
+            <li key={entry.id}>
+              <Link
+                href={`/games/${entry.id}`}
+                className="flex min-h-12 items-baseline gap-2 py-1 text-base transition-colors hover:text-accent"
+              >
+                <span className="display-face shrink-0">{entry.name}</span>
+                {/* Dot leaders as a dotted rule rather than repeated periods,
+                    which a screen reader would read out one by one. */}
+                <span
+                  aria-hidden="true"
+                  className="min-w-4 flex-1 translate-y-[-0.25rem] border-b border-dotted border-foreground/30"
+                />
+                <span className="shrink-0 tabular-nums text-foreground/55">
+                  {entry.nights === 0 ? "—" : entry.nights}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-10 border-t border-foreground/15 pt-6">
+        <IndexForm />
       </div>
     </>
   );

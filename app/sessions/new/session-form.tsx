@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 
+import Link from "next/link";
+
 import type { Game, Player } from "@/lib/types";
 
 import { createSession, type State } from "./actions";
@@ -151,19 +153,19 @@ function SessionFields({
                 {game.name}
               </option>
             ))}
-            <option value="__new__">+ New game…</option>
           </select>
         </label>
 
-        {gameId === "__new__" && (
-          <input
-            type="text"
-            name="new_game_name"
-            placeholder="Name of the new game"
-            autoFocus
-            disabled={pending}
-            className={fieldClass}
-          />
+        {/* Titles enter the book through the Index, so without one there is
+            nothing to record against and no way forward from here. */}
+        {games.length === 0 && (
+          <p className="text-sm text-foreground/60">
+            No titles in the contents yet —{" "}
+            <Link href="/" className="text-accent underline">
+              add one to the Index
+            </Link>{" "}
+            first.
+          </p>
         )}
       </div>
 

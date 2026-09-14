@@ -40,6 +40,13 @@ export type SessionSummary = {
   players: SessionPlayer[];
 };
 
+/** One line of the Index: a title in the contents, and how many nights it holds. */
+export type ContentsEntry = {
+  id: number;
+  name: string;
+  nights: number;
+};
+
 export type StandingRow = {
   id: number;
   name: string;
