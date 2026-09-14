@@ -92,7 +92,21 @@ function isEditable(node: EventTarget | null): boolean {
   );
 }
 
-export function Paginator({ children }: { children: ReactNode }) {
+export function Paginator({
+  children,
+  columns = 2,
+  resetKey,
+}: {
+  children: ReactNode;
+  /** 1 when the flow occupies a single page, as in one region of a spread. */
+  columns?: 1 | 2;
+  /**
+   * What counts as "a new chapter". Defaults to `children`, which changes on
+   * every navigation. A region whose content is re-rendered by a query change
+   * that must NOT turn the page passes its own key instead.
+   */
+  resetKey?: string;
+}) {
   const flowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -210,14 +224,20 @@ export function Paginator({ children }: { children: ReactNode }) {
     };
   }, [paged, measure]);
 
-  // `children` is a fresh element on every navigation, which also catches
-  // ?game=1 → ?game=2 that usePathname would miss. A new chapter opens at its
-  // first page.
+  // A new chapter opens at its first page.
+  //
+  // With no key, `children` is the key: a fresh element on every navigation,
+  // which also catches /sessions?game=1 → ?game=2 that a pathname would miss.
+  // A region passes its own key when a query change must not turn the page —
+  // on a game spread ?entry= moves the viewer only, and a reader who chose a
+  // date from page three of the record stays on page three.
+  const chapter = resetKey ?? children;
+
   useIsoLayoutEffect(() => {
     setRequested(0);
     if (flowRef.current) flowRef.current.scrollLeft = 0;
     measure();
-  }, [children, measure]);
+  }, [chapter, measure]);
 
   useIsoLayoutEffect(() => {
     const flow = flowRef.current;
@@ -327,6 +347,7 @@ export function Paginator({ children }: { children: ReactNode }) {
         ref={flowRef}
         className="book-flow"
         data-paged={paged ? "" : undefined}
+        data-columns={columns}
         onFocus={onFocus}
       >
         <div ref={contentRef}>{children}</div>

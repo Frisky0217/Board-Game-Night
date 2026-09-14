@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { Game, Player } from "@/lib/types";
 
 import { createSession, type State } from "./actions";
+import { PhotoField } from "./photo-field";
 
 // Lives here rather than in actions.ts: a "use server" module may only export
 // async functions, so it cannot export a plain constant.
@@ -26,14 +27,19 @@ const fieldClass =
 export function SessionForm({
   games,
   players,
+  fixedGame,
 }: {
   games: Game[];
   players: Player[];
+  /** Set on a game spread, where the entry can only belong to that game. */
+  fixedGame?: Game;
 }) {
   const [state, formAction, pending] = useActionState(
     createSession,
     initialState,
   );
+  // An entry saved mid-upload would point at a path that does not exist yet.
+  const [uploading, setUploading] = useState(false);
 
   return (
     // Block flow throughout: the form is taller than a page and must fragment
@@ -46,16 +52,22 @@ export function SessionForm({
         key={state.formKey}
         games={games}
         players={players}
+        fixedGame={fixedGame}
         pending={pending}
+        onUploadingChange={setUploading}
       />
 
       <div className="space-y-4">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="edge-pill h-12 w-full bg-accent px-6 text-base font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? "Inscribing…" : "Set it down"}
+          {pending
+            ? "Inscribing…"
+            : uploading
+              ? "Adding the photograph…"
+              : "Set it down"}
         </button>
 
         {/* Rendered outside the keyed subtree so the confirmation survives the
@@ -79,11 +91,15 @@ export function SessionForm({
 function SessionFields({
   games,
   players,
+  fixedGame,
   pending,
+  onUploadingChange,
 }: {
   games: Game[];
   players: Player[];
+  fixedGame?: Game;
   pending: boolean;
+  onUploadingChange: (uploading: boolean) => void;
 }) {
   const [gameId, setGameId] = useState("");
   const [checked, setChecked] = useState<number[]>([]);
@@ -138,27 +154,33 @@ function SessionFields({
       </label>
 
       <div className="space-y-2">
-        <label className="block space-y-2">
-          <span className="block text-sm font-medium">The game</span>
-          <select
-            name="game_id"
-            value={gameId}
-            onChange={(e) => setGameId(e.target.value)}
-            disabled={pending}
-            className={fieldClass}
-          >
-            <option value="">Pick a game…</option>
-            {games.map((game) => (
-              <option key={game.id} value={game.id}>
-                {game.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {fixedGame ? (
+          // On a game spread the entry can only belong to this game, so the
+          // choice is already made and travels as a hidden field.
+          <input type="hidden" name="game_id" value={fixedGame.id} />
+        ) : (
+          <label className="block space-y-2">
+            <span className="block text-sm font-medium">The game</span>
+            <select
+              name="game_id"
+              value={gameId}
+              onChange={(e) => setGameId(e.target.value)}
+              disabled={pending}
+              className={fieldClass}
+            >
+              <option value="">Pick a game…</option>
+              {games.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {/* Titles enter the book through the Index, so without one there is
             nothing to record against and no way forward from here. */}
-        {games.length === 0 && (
+        {!fixedGame && games.length === 0 && (
           <p className="text-sm text-foreground/60">
             No titles in the contents yet —{" "}
             <Link href="/" className="text-accent underline">
@@ -168,6 +190,20 @@ function SessionFields({
           </p>
         )}
       </div>
+
+      <PhotoField disabled={pending} onBusyChange={onUploadingChange} />
+
+      <label className="block space-y-2">
+        <span className="block text-sm font-medium">A note</span>
+        <textarea
+          name="description"
+          rows={3}
+          maxLength={2000}
+          placeholder="Anything worth remembering about the night"
+          disabled={pending}
+          className="edge-soft on-page w-full resize-none px-4 py-3 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
+        />
+      </label>
 
       <fieldset className="space-y-2">
         <legend className="mb-2 text-sm font-medium">Whose hands</legend>

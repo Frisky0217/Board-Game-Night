@@ -2,13 +2,16 @@ import { cache } from "react";
 
 import { connection } from "next/server";
 
+import { PHOTO_BUCKET } from "@/lib/photo";
 import { supabase } from "@/lib/supabase";
 import type {
   ContentsEntry,
+  EntryDetail,
   Game,
   Player,
   SessionSummary,
   StandingRow,
+  TallyRow,
 } from "@/lib/types";
 
 /**
@@ -37,6 +40,19 @@ type ContentsQueryRow = {
   id: number;
   name: string;
   sessions: { count: number }[];
+};
+
+type TallyQueryRow = {
+  won: boolean;
+  players: { id: number; name: string } | null;
+};
+
+type EntryQueryRow = {
+  id: number;
+  played_on: string;
+  photo_url: string | null;
+  description: string | null;
+  results: { won: boolean; players: { id: number; name: string } | null }[];
 };
 
 /**
@@ -174,6 +190,94 @@ export async function getSessions(
           Number(b.won) - Number(a.won) || a.name.localeCompare(b.name),
       ),
   }));
+}
+
+/**
+ * The tally for one game: wins per player at this game only.
+ *
+ * `sessions!inner` is correct here, unlike the global standings — we genuinely
+ * want to drop results belonging to other games, and a player who has never
+ * played this one does not belong in its tally at all.
+ */
+export async function getGameTally(gameId: number): Promise<TallyRow[]> {
+  await connection();
+
+  const { data, error } = await supabase
+    .from("results")
+    .select("won, players(id, name), sessions!inner(game_id)")
+    .eq("sessions.game_id", gameId)
+    .overrideTypes<TallyQueryRow[], { merge: false }>();
+
+  if (error) throw new Error(`Could not load the tally: ${error.message}`);
+
+  const byPlayer = new Map<number, TallyRow>();
+  for (const row of data ?? []) {
+    if (!row.players) continue;
+    const existing = byPlayer.get(row.players.id) ?? {
+      id: row.players.id,
+      name: clean(row.players.name),
+      wins: 0,
+      played: 0,
+    };
+    existing.played += 1;
+    if (row.won) existing.wins += 1;
+    byPlayer.set(row.players.id, existing);
+  }
+
+  return [...byPlayer.values()].sort(
+    (a, b) => b.wins - a.wins || b.played - a.played || a.name.localeCompare(b.name),
+  );
+}
+
+/**
+ * One entry, for the right page. Scoped to the game so a stale or hand-edited
+ * `?entry=` belonging to another game cannot be viewed here.
+ */
+export async function getEntry(
+  entryId: number,
+  gameId: number,
+): Promise<EntryDetail | null> {
+  await connection();
+
+  const { data, error } = await supabase
+    .from("sessions")
+    .select(
+      "id, played_on, photo_url, description, results(won, players(id, name))",
+    )
+    .eq("id", entryId)
+    .eq("game_id", gameId)
+    .maybeSingle<EntryQueryRow>();
+
+  if (error) throw new Error(`Could not load the entry: ${error.message}`);
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    playedOn: data.played_on,
+    // The column holds a path; the public URL is built here so the viewer stays
+    // dumb, and so a stored row survives the project moving. getPublicUrl is a
+    // pure string builder — no network call.
+    photoUrl: data.photo_url
+      ? supabase.storage.from(PHOTO_BUCKET).getPublicUrl(data.photo_url).data
+          .publicUrl
+      : null,
+    description: data.description,
+    players: data.results
+      .flatMap((result) =>
+        result.players
+          ? [
+              {
+                id: result.players.id,
+                name: clean(result.players.name),
+                won: result.won,
+              },
+            ]
+          : [],
+      )
+      .sort(
+        (a, b) => Number(b.won) - Number(a.won) || a.name.localeCompare(b.name),
+      ),
+  };
 }
 
 /** Wins per player. */

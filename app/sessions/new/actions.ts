@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { PHOTO_PATH_PATTERN } from "@/lib/photo";
 import { supabase } from "@/lib/supabase";
 import type { Player } from "@/lib/types";
 
@@ -52,6 +53,8 @@ export async function createSession(
 
   const playedOn = String(formData.get("played_on") ?? "").trim();
   const rawGameId = String(formData.get("game_id") ?? "").trim();
+  const photoPath = String(formData.get("photo_url") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
 
   const playerIds = formData.getAll("player_ids").map(toId);
   const winnerIdList = formData.getAll("winner_ids").map(toId);
@@ -80,6 +83,17 @@ export async function createSession(
   const gameId = toId(rawGameId);
   if (gameId === null) {
     return fail("That game selection was malformed — reload and try again.");
+  }
+
+  // The path arrives from a public POST, so accept only the shape uploadPhoto
+  // produces. This does not stop someone naming another object in the same
+  // bucket — the value is only ever rendered through a URL builder scoped to
+  // that bucket — but it does keep anything else out of the column.
+  if (photoPath && !PHOTO_PATH_PATTERN.test(photoPath)) {
+    return fail("That photograph reference was malformed — try attaching it again.");
+  }
+  if (description.length > 2000) {
+    return fail("That note is too long to set down.");
   }
 
   if (existingPlayerIds.length === 0 && newPlayerNames.length === 0) {
@@ -148,7 +162,12 @@ export async function createSession(
   // 2. Create the session.
   const { data: session, error: sessionError } = await supabase
     .from("sessions")
-    .insert({ played_on: playedOn, game_id: gameId })
+    .insert({
+      played_on: playedOn,
+      game_id: gameId,
+      photo_url: photoPath || null,
+      description: description || null,
+    })
     .select("id")
     .single<{ id: number }>();
 

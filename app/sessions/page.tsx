@@ -3,6 +3,8 @@ import Link from "next/link";
 import { formatPlayedOn } from "@/lib/format";
 import { getGames, getSessions } from "@/lib/queries";
 
+import { Paginator } from "@/app/book/paginator";
+
 export const metadata = {
   title: "The Chronicle · The Archive",
 };
@@ -26,7 +28,7 @@ export default async function ChroniclePage({
   );
 
   return (
-    <>
+    <Paginator>
       <h1 className="display-face mb-8 text-4xl font-semibold">
         The Chronicle
         {section && (
@@ -84,6 +86,6 @@ export default async function ChroniclePage({
           ))}
         </ul>
       )}
-    </>
+    </Paginator>
   );
 }

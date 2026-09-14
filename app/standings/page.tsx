@@ -3,6 +3,8 @@ import Link from "next/link";
 import { formatWinRate } from "@/lib/format";
 import { getStandings } from "@/lib/queries";
 
+import { Paginator } from "@/app/book/paginator";
+
 export const metadata = {
   title: "The Tally · The Archive",
 };
@@ -11,7 +13,7 @@ export default async function TallyPage() {
   const standings = await getStandings();
 
   return (
-    <>
+    <Paginator>
       <h1 className="display-face mb-8 text-4xl font-semibold">The Tally</h1>
 
       {standings.length === 0 ? (
@@ -66,6 +68,6 @@ export default async function TallyPage() {
           </tbody>
         </table>
       )}
-    </>
+    </Paginator>
   );
 }

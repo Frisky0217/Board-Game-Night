@@ -40,6 +40,24 @@ export type SessionSummary = {
   players: SessionPlayer[];
 };
 
+/** The right page: one entry, viewed in full. */
+export type EntryDetail = {
+  id: number;
+  /** Raw YYYY-MM-DD, formatted at render time. */
+  playedOn: string;
+  photoUrl: string | null;
+  description: string | null;
+  players: SessionPlayer[];
+};
+
+/** One line of a per-game tally. */
+export type TallyRow = {
+  id: number;
+  name: string;
+  wins: number;
+  played: number;
+};
+
 /** One line of the Index: a title in the contents, and how many nights it holds. */
 export type ContentsEntry = {
   id: number;

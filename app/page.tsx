@@ -3,12 +3,13 @@ import Link from "next/link";
 import { getContents } from "@/lib/queries";
 
 import { IndexForm } from "./index-form";
+import { Paginator } from "./book/paginator";
 
 export default async function IndexPage() {
   const contents = await getContents();
 
   return (
-    <>
+    <Paginator>
       <h1 className="display-face text-4xl font-semibold">The Index</h1>
       <p className="mt-3 text-base text-foreground/60">
         Every game set down in this book.
@@ -45,6 +46,6 @@ export default async function IndexPage() {
       <div className="mt-10 border-t border-foreground/15 pt-6">
         <IndexForm />
       </div>
-    </>
+    </Paginator>
   );
 }

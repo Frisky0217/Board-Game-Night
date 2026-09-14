@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Nunito_Sans } from "next/font/google";
 import "./globals.css";
-import { Paginator } from "./book/paginator";
 import { Nav } from "./nav";
 
 // Both are variable fonts, so `weight` is omitted to get the full range.
@@ -45,7 +44,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <div className="book-head">
                   <Nav />
                 </div>
-                <Paginator>{children}</Paginator>
+                {/* Each page decides how its content maps to paper: most wrap
+                    themselves in <Paginator> and flow across both pages, while
+                    a game spread uses <Spread> to give the two pages different
+                    jobs. The layout only provides the book. */}
+                {children}
               </div>
             </div>
           </div>

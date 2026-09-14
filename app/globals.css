@@ -55,6 +55,9 @@
   --pad-block: clamp(1.25rem, 3.4vmin, 2.75rem);
   --pad-fore: clamp(1.25rem, 3.2vmin, 3rem);
   --head-h: 3.25rem;
+  /* Reserved at the foot of every page for the turn controls, so they never
+     land on top of the last line. */
+  --turn-h: 3rem;
 
   /* One stop list, reused at four orientations. Hard stops, so each sheet is a
      crisp rule rather than a smudge; three alphas so the eye finds no rhythm. */
@@ -496,6 +499,9 @@
 .book-flow[data-paged] {
   column-count: 2;
   column-gap: var(--gutter-w);
+  /* Definite, as column-fill: auto requires — and short of the full content
+     box by the strip the turn controls occupy. */
+  height: calc(100% - var(--turn-h));
   column-fill: auto; /* fill the recto before starting the verso */
   overflow: hidden; /* NOT clip: clip kills scrollWidth and hides pages */
   scroll-behavior: smooth;
@@ -527,10 +533,88 @@
   box-decoration-break: clone;
 }
 
+/* One region of the flow occupies a single page — used by the left page of a
+   spread, where content paginates within that page alone. */
+.book-flow[data-paged][data-columns="1"] {
+  column-count: 1;
+}
+
+/* ─── A spread whose pages do different jobs ────────────────────────────── */
+
+/* Collapsed by default: one region, the viewer following the left content as
+   the next page. The grid below is the wide-viewport enhancement. */
+.spread-regions {
+  height: 100%;
+}
+
+.spread-region-right {
+  display: none;
+}
+
+/* The negation of the book's own collapse query above — a wide but SHORT
+   viewport has already folded to one page, and a two-region grid inside a
+   one-page spread would hang the viewer off the fore edge. */
+@media (min-width: 48rem) and (min-height: 30.001rem) {
+  .spread-regions {
+    display: grid;
+    /* The gap is the gutter, so the fold ornament falls between the regions. */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* Both tracks are minmax(0, …), never plain 1fr. `1fr` means
+       minmax(auto, 1fr), and that auto minimum is the item's max-content size:
+       a ten-page record would size the row to ten pages, the flow's height
+       would stop being definite, column-fill: auto would have nothing to fill
+       against, and .spread's overflow:hidden would clip the lot in silence. */
+    grid-template-rows: minmax(0, 1fr);
+    gap: var(--gutter-w);
+  }
+
+  /* column-fill: auto needs a definite height, and a merely stretched grid
+     item is not reliably treated as definite for fragmentation. Chaining an
+     explicit height down from the absolutely positioned stage is what makes
+     pagination inside the left region work. */
+  .spread-region {
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .spread-region-right {
+    display: block;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .spread-region-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Out of the flow once the viewer has a page of its own. */
+  .spread-inline-viewer {
+    display: none;
+  }
+}
+
+/* Collapsed, the viewer is the page AFTER the record — the spec's "the left and
+   right pages of a spread become consecutive pages" — rather than being crammed
+   onto the foot of whatever page the record happens to end on. Inert outside a
+   fragmentation context, so the pre-hydration render is unaffected. */
+.spread-inline-viewer {
+  break-before: column;
+}
+
+/* The turn controls sit in a strip reserved at the foot of the page.
+   Previously they were absolutely positioned against the paper's edge while the
+   flow still occupied the full content height, so they covered the last line of
+   text at every viewport size: their top sat --pad-block/3 + 2.75rem above the
+   paper edge, against a --pad-block that clamps at 2.75rem. Shortening the flow
+   by --turn-h is what makes the space they occupy actually theirs. */
 .book-turn {
   position: absolute;
+  height: var(--turn-h);
   inset-inline: 0;
-  bottom: calc(var(--pad-block) / 3);
+  /* Sits in the strip the flow gave up, just inside the page's bottom margin. */
+  bottom: var(--pad-block);
   z-index: 4;
   display: flex;
   align-items: center;
