@@ -14,8 +14,9 @@ export function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="px-6 pr-16 pl-8 pt-6 sm:pr-20 sm:pl-12">
-      <div className="mx-auto flex w-full max-w-2xl flex-wrap items-baseline gap-x-5 gap-y-1 border-b border-foreground/15 pb-3">
+    <header>
+      {/* A running head on the left page: the book's title, then its sections. */}
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 border-b border-foreground/15 pb-2">
         <Link
           href="/"
           className="display-face mr-auto text-lg font-semibold tracking-wide"

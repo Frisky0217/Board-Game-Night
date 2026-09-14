@@ -45,9 +45,9 @@ function clean(name: string | undefined | null) {
  * every page that reads game night data inherits it.
  */
 /**
- * Wrapped in React `cache` because both the root layout (for the ribbon rail)
- * and the chronicle page (to resolve the ?game= filter) need the game list —
- * this way one request issues one query instead of two.
+ * Wrapped in React `cache` so that routes needing the game list more than once
+ * per request — the chronicle resolving `?game=`, the record form populating
+ * its select — issue one query rather than several.
  */
 export const getGames = cache(async function getGames(): Promise<Game[]> {
   await connection();

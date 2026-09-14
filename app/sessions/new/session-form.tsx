@@ -34,7 +34,9 @@ export function SessionForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    // Block flow throughout: the form is taller than a page and must fragment
+    // across the fold rather than overflow its column and be clipped.
+    <form action={formAction} className="space-y-8">
       {/* formKey changes only on success, so this remount clears the
           controlled checkbox, winner and new-player state all at once —
           while a validation failure leaves the user's input untouched. */}
@@ -45,7 +47,7 @@ export function SessionForm({
         pending={pending}
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="space-y-4">
         <button
           type="submit"
           disabled={pending}
@@ -117,8 +119,8 @@ function SessionFields({
 
   return (
     <>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium">The date</span>
+      <label className="block space-y-2">
+        <span className="block text-sm font-medium">The date</span>
         <input
           type="date"
           name="played_on"
@@ -133,9 +135,9 @@ function SessionFields({
         />
       </label>
 
-      <div className="flex flex-col gap-2">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">The game</span>
+      <div className="space-y-2">
+        <label className="block space-y-2">
+          <span className="block text-sm font-medium">The game</span>
           <select
             name="game_id"
             value={gameId}
@@ -165,7 +167,7 @@ function SessionFields({
         )}
       </div>
 
-      <fieldset className="flex flex-col gap-2">
+      <fieldset className="space-y-2">
         <legend className="mb-2 text-sm font-medium">Whose hands</legend>
 
         {players.length === 0 && newPlayers.length === 0 && (

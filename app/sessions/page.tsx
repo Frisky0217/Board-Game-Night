@@ -43,11 +43,13 @@ export default async function ChroniclePage({
           .
         </p>
       ) : (
-        <ul className="flex flex-col gap-4">
+        /* Block flow so the record can fragment across pages instead of being
+           clipped — a column flex container does not fragment reliably. */
+        <ul className="space-y-4">
           {sessions.map((session) => (
             <li
               key={session.id}
-              className="edge-soft on-page flex flex-col gap-2 px-5 py-4"
+              className="edge-soft on-page space-y-2 px-5 py-4"
             >
               <p className="text-sm text-foreground/60">
                 {formatPlayedOn(session.playedOn)} · {session.gameName}

@@ -29,7 +29,9 @@ export default function Home() {
         A record of game nights. Anyone holding the link may set one down.
       </p>
 
-      <div className="mt-8 flex flex-col gap-3">
+      {/* Block flow, not column flex: a column flex container fragments badly
+          in multicol and would be clipped instead of flowing to the next page. */}
+      <div className="mt-8 space-y-3">
         {DESTINATIONS.map((destination) => (
           <Link
             key={destination.href}

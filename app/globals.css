@@ -1,27 +1,116 @@
 @import "tailwindcss";
 
-/* The Archive. Three layers only, per the spec: the desk the book rests on, the
-   board (its cover edge), and the page itself. */
+/* ─── The Archive ──────────────────────────────────────────────────────────
+   Layers, outermost in: the desk the book rests on, the cover (a four-sided
+   leather frame), the text block (whose padding ring paints the stacked sheet
+   edges), and the spread itself — two decorative leaves under one light, with
+   the content flowing above them in columns. */
 :root {
+  /* the room */
   --background: #14100d;
-  --board: #2b211a;
+  --desk-pool: 255 232 190;
+
+  /* the cover: three tones are what make a board read as solid */
+  --board: #32261d;
+  --cover-hi: #55402e;
+  --cover-lo: #16100c;
+
+  /* paper */
   --page: #f4ecd8;
   --surface: #faf4e6;
+  --edge-paper: #e9dfc6;
+  --edge-ink: 120 98 64;
   --foreground: #3b2f2a;
+
   --accent: #4f6b40;
   --accent-foreground: #f7f1e3;
   --gold: #8a6220;
   --rust: #a24b32;
 
-  /* A small curated set rather than a hue computed from the game id: a free
-     hue rotation lands on cyans and violets that fight the earthy palette.
-     With many games these repeat, but position and the name disambiguate. */
-  --ribbon-1: #5f7a4e;
-  --ribbon-2: #a24b32;
-  --ribbon-3: #a8792c;
-  --ribbon-4: #7d6221;
-  --ribbon-5: #3f5668;
-  --ribbon-6: #6b4356;
+  /* One shadow ink and one lamp colour drive every effect, as bare triplets
+     consumed via rgb(var(--x) / <alpha>) — which is what lets dark mode retune
+     all of it in a single block. */
+  --shadow-rgb: 43 33 26;
+  --lamp-rgb: 255 246 214;
+
+  --lamp-a: 0.5;
+  --vignette-a: 0.26;
+  --gutter-a: 0.34;
+  --wear-a: 0.11;
+  --fox-a: 0.075;
+  --edge-shade-a: 0.5;
+
+  /* geometry */
+  --desk-pad: clamp(0.5rem, 2.4vmin, 2.5rem);
+  --cover-w: clamp(0.625rem, 1.7vmin, 1.375rem);
+  --edge-w: clamp(6px, 1.1vmin, 14px);
+  --chrome: calc(2 * (var(--cover-w) + var(--edge-w)));
+  --book-max: 84rem;
+  --spread-ar: 1.414; /* two portrait pages side by side */
+  --radius-cover: clamp(3px, 0.7vmin, 7px);
+
+  /* The gutter is a measurement, not just an ornament: it IS the column gap,
+     which is what makes the fold fall exactly between the two text columns. */
+  --gutter-w: clamp(2.25rem, 6.5vmin, 4.5rem);
+  --pad-block: clamp(1.25rem, 3.4vmin, 2.75rem);
+  --pad-fore: clamp(1.25rem, 3.2vmin, 3rem);
+  --head-h: 3.25rem;
+
+  /* One stop list, reused at four orientations. Hard stops, so each sheet is a
+     crisp rule rather than a smudge; three alphas so the eye finds no rhythm. */
+  --sheet-stops:
+    rgb(var(--edge-ink) / 0) 0px, rgb(var(--edge-ink) / 0) 1px,
+    rgb(var(--edge-ink) / 0.26) 1px, rgb(var(--edge-ink) / 0.26) 2px,
+    rgb(var(--edge-ink) / 0) 2px, rgb(var(--edge-ink) / 0) 4px,
+    rgb(var(--edge-ink) / 0.44) 4px, rgb(var(--edge-ink) / 0.44) 5px,
+    rgb(var(--edge-ink) / 0) 5px, rgb(var(--edge-ink) / 0) 7px,
+    rgb(var(--edge-ink) / 0.15) 7px, rgb(var(--edge-ink) / 0.15) 8px,
+    rgb(var(--edge-ink) / 0) 8px;
+
+  --band-left: repeating-linear-gradient(to right, var(--sheet-stops));
+  --band-right: repeating-linear-gradient(to left, var(--sheet-stops));
+  --band-top: repeating-linear-gradient(to bottom, var(--sheet-stops));
+  --band-bottom: repeating-linear-gradient(to top, var(--sheet-stops));
+
+  /* Authored against the whole spread and rendered at 200% width, so each leaf
+     shows one half and a single light spans one book. */
+  --paper-lamp: radial-gradient(
+    ellipse 120% 72% at 50% -14%,
+    rgb(var(--lamp-rgb) / var(--lamp-a)),
+    transparent 64%
+  );
+  --paper-vignette: radial-gradient(
+    ellipse 96% 88% at 50% 38%,
+    rgb(var(--shadow-rgb) / 0) 44%,
+    rgb(var(--shadow-rgb) / calc(var(--vignette-a) * 0.4)) 76%,
+    rgb(var(--shadow-rgb) / var(--vignette-a)) 100%
+  );
+  --paper-wear-y: linear-gradient(
+    to bottom,
+    rgb(var(--shadow-rgb) / calc(var(--wear-a) * 0.7)),
+    transparent 6%,
+    transparent 93%,
+    rgb(var(--shadow-rgb) / var(--wear-a))
+  );
+  --paper-wear-fore-l: linear-gradient(
+    to right,
+    rgb(var(--shadow-rgb) / var(--wear-a)),
+    transparent 7%,
+    transparent 91%,
+    rgb(var(--shadow-rgb) / calc(var(--wear-a) * 0.3))
+  );
+  --paper-wear-fore-r: linear-gradient(
+    to left,
+    rgb(var(--shadow-rgb) / var(--wear-a)),
+    transparent 7%,
+    transparent 91%,
+    rgb(var(--shadow-rgb) / calc(var(--wear-a) * 0.3))
+  );
+
+  /* Alpha-only noise rather than mix-blend-mode: a blend container forces the
+     browser to flatten and re-composite its backdrop every frame, which is the
+     likeliest source of a janky page turn once stage 7 rotates a leaf above it. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.18 0 0 0 0 0.14 0 0 0 0 0.11 0.30 0.30 0.30 0 -0.36'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
 }
 
 @theme inline {
@@ -38,28 +127,334 @@
   --font-display: var(--font-fraunces);
 }
 
+/* A dark book is different material, not an inverted one: near-black leather,
+   paper gone brown, a dim warm lamp, and shadows that are genuinely black
+   because there is no warm bounce to tint them. */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0b0908;
-    --board: #1a1512;
-    --page: #241e1a;
-    --surface: #2e2721;
+    --desk-pool: 210 176 128;
+
+    --board: #1d1714;
+    --cover-hi: #2e241d;
+    --cover-lo: #050403;
+
+    --page: #251f1a;
+    --surface: #2f2822;
+    --edge-paper: #2b2420;
+    --edge-ink: 0 0 0;
     --foreground: #e8dcc4;
+
     --accent: #9dba86;
     --accent-foreground: #1e2719;
     --gold: #d9b26a;
     --rust: #d98a6e;
 
-    --ribbon-1: #7f9a6e;
-    --ribbon-2: #c26b52;
-    --ribbon-3: #c8994c;
-    --ribbon-4: #9d8241;
-    --ribbon-5: #5f7688;
-    --ribbon-6: #8b6376;
+    --shadow-rgb: 0 0 0;
+    --lamp-rgb: 226 198 152;
+
+    --lamp-a: 0.16;
+    --vignette-a: 0.36;
+    --gutter-a: 0.52;
+    --wear-a: 0.18;
+    --fox-a: 0.05;
+    --edge-shade-a: 0.72;
+
+    /* Inverted to light speckle — dark grain on dark paper is invisible. */
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.92 0 0 0 0 0.86 0 0 0 0 0.70 0.22 0.22 0.22 0 -0.28'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
   }
 }
 
-/* Hand-drawn edges, kept from the previous pass. */
+/* ─── The room ─────────────────────────────────────────────────────────── */
+@utility desk {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: var(--desk-pad);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse 80% 55% at 50% 6%,
+      rgb(var(--desk-pool) / 0.055),
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 130% 95% at 50% 50%,
+      transparent 38%,
+      rgb(0 0 0 / 0.45) 100%
+    );
+}
+
+/* ─── The cover: padding is the four-sided frame ────────────────────────── */
+@utility book {
+  --avail-h: calc(100svh - 2 * var(--desk-pad));
+  --paper-h: max(
+    18rem,
+    min(
+      calc(var(--avail-h) - var(--chrome)),
+      calc((min(100%, var(--book-max)) - var(--chrome)) / var(--spread-ar))
+    )
+  );
+
+  position: relative;
+  isolation: isolate;
+  width: min(100%, calc(var(--paper-h) * var(--spread-ar) + var(--chrome)));
+  padding: var(--cover-w);
+  border-radius: var(--radius-cover);
+
+  background-color: var(--board);
+  background-image:
+    linear-gradient(
+      148deg,
+      rgb(var(--lamp-rgb) / 0.1) 0%,
+      transparent 34%,
+      rgb(0 0 0 / 0.22) 100%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% -20%,
+      var(--cover-hi),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 140% 120% at 50% 122%,
+      var(--cover-lo),
+      transparent 60%
+    );
+
+  box-shadow:
+    inset 0 1px 0 rgb(var(--lamp-rgb) / 0.08),
+    inset 0 -1px 0 rgb(0 0 0 / 0.4),
+    0 clamp(10px, 2.4vmin, 26px) clamp(24px, 6vmin, 64px)
+      calc(-1 * clamp(8px, 2vmin, 22px)) rgb(0 0 0 / 0.72);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image:
+      radial-gradient(
+        ellipse 9rem 6rem at 1% 2%,
+        rgb(var(--lamp-rgb) / 0.07),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 10rem 7rem at 99% 98%,
+        rgb(0 0 0 / 0.3),
+        transparent 70%
+      ),
+      var(--grain);
+    background-size: auto, auto, 340px 340px;
+    opacity: 0.75;
+  }
+}
+
+/* ─── The text block: its padding ring is the stacked sheet edges ───────── */
+@utility book-block {
+  position: relative;
+  z-index: 1;
+  padding: var(--edge-w);
+  border-radius: calc(var(--radius-cover) - 2px);
+  background-color: var(--edge-paper);
+  background-repeat: no-repeat;
+  /* The shade sits on top of all four bands — that is what turns stripes into
+     the cut side of a stack. */
+  background-image:
+    radial-gradient(
+      ellipse 100% 100% at 50% 50%,
+      transparent 56%,
+      rgb(var(--shadow-rgb) / var(--edge-shade-a)) 100%
+    ),
+    var(--band-left), var(--band-right), var(--band-top), var(--band-bottom);
+  background-size:
+    100% 100%,
+    var(--edge-w) 100%,
+    var(--edge-w) 100%,
+    100% var(--edge-w),
+    100% var(--edge-w);
+  background-position:
+    center,
+    left center,
+    right center,
+    center top,
+    center bottom;
+  box-shadow:
+    inset 0 2px 5px -2px rgb(0 0 0 / 0.55),
+    0 0 0 1px rgb(0 0 0 / 0.35);
+}
+
+/* ─── The paper ────────────────────────────────────────────────────────── */
+@utility spread {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  aspect-ratio: var(--spread-ar);
+  overflow: hidden;
+  border-radius: 2px;
+  /* Base colour lives here, not on the leaves: a 50/50 grid on a fractional
+     width can land on a half pixel, and a hairline down the fold is the one
+     artefact that destroys the illusion. */
+  background-color: var(--page);
+  /* Stage 7 hangs rotateY off this. */
+  perspective: 2000px;
+  perspective-origin: 50% 45%;
+}
+
+/* The leaves are decoration only — they hold no content and never scroll. */
+@utility leaf {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  pointer-events: none;
+}
+
+@utility leaf-left {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        ellipse 11rem 7rem at 5% 11%,
+        rgb(138 98 32 / var(--fox-a)),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 7rem 9rem at 3% 58%,
+        rgb(162 75 50 / calc(var(--fox-a) * 0.8)),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 13rem 6rem at 18% 95%,
+        rgb(138 98 32 / calc(var(--fox-a) * 0.85)),
+        transparent 70%
+      );
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      var(--paper-lamp), var(--paper-vignette), var(--paper-wear-fore-l),
+      var(--paper-wear-y), var(--grain);
+    background-size:
+      200% 100%,
+      200% 100%,
+      100% 100%,
+      100% 100%,
+      160px 160px;
+    background-position: left top, left top, 0 0, 0 0, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  }
+}
+
+@utility leaf-right {
+  /* Deliberately not a mirror of the left: different count, sizes and weights,
+     so the two pages do not read as copies of each other. */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        ellipse 9rem 10rem at 97% 31%,
+        rgb(162 75 50 / calc(var(--fox-a) * 0.9)),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 14rem 7rem at 86% 92%,
+        rgb(138 98 32 / calc(var(--fox-a) * 0.75)),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 5rem 5rem at 62% 8%,
+        rgb(59 47 42 / calc(var(--fox-a) * 0.5)),
+        transparent 70%
+      );
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      var(--paper-lamp), var(--paper-vignette), var(--paper-wear-fore-r),
+      var(--paper-wear-y), var(--grain);
+    background-size:
+      200% 100%,
+      200% 100%,
+      100% 100%,
+      100% 100%,
+      160px 160px;
+    background-position: right top, right top, 0 0, 0 0, 12px 40px;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  }
+}
+
+/* ─── The fold ─────────────────────────────────────────────────────────── */
+@utility page-gutter {
+  position: absolute;
+  inset-block: 0;
+  /* calc rather than translateX so this never becomes a transformed
+     participant in the spread's perspective container. */
+  left: calc(50% - var(--gutter-w) / 2);
+  width: var(--gutter-w);
+  z-index: 2;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: var(--gutter-w) 100%;
+  background-image:
+    linear-gradient(
+      to right,
+      transparent calc(50% - 0.5px),
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.85)) calc(50% - 0.5px),
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.85)) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      to right,
+      transparent 12%,
+      rgb(var(--lamp-rgb) / calc(var(--lamp-a) * 0.28)) 27%,
+      transparent 40%,
+      transparent 60%,
+      rgb(var(--lamp-rgb) / calc(var(--lamp-a) * 0.28)) 73%,
+      transparent 88%
+    ),
+    linear-gradient(
+      to right,
+      rgb(var(--shadow-rgb) / 0) 0%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.1)) 24%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.34)) 40%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.88)) 48.5%,
+      rgb(var(--shadow-rgb) / var(--gutter-a)) 50%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.88)) 51.5%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.34)) 60%,
+      rgb(var(--shadow-rgb) / calc(var(--gutter-a) * 0.1)) 76%,
+      rgb(var(--shadow-rgb) / 0) 100%
+    );
+}
+
+/* ─── Content on the page ──────────────────────────────────────────────── */
+@utility on-page {
+  background-color: var(--surface);
+  box-shadow:
+    0 1px 2px rgb(var(--shadow-rgb) / 0.1),
+    0 4px 12px -4px rgb(var(--shadow-rgb) / 0.2);
+}
+
 @utility edge-soft {
   border-radius: 1.1rem 1.5rem 1.2rem 1.4rem;
 }
@@ -73,8 +468,7 @@
 }
 
 /* Fraunces ships SOFT and WONK axes, but next/font only includes the axes you
-   ask for and they still default to 0 — they have to be set here to have any
-   effect. WONK swaps in the wonky glyph forms; SOFT rounds the terminals. */
+   ask for and they still default to 0 — they have to be set here. */
 @utility display-face {
   font-family: var(--font-display), Georgia, serif;
   font-variation-settings:
@@ -83,105 +477,140 @@
     "opsz" 40;
 }
 
-/* The page: aged paper. Both decorative layers are pseudo-elements and both are
-   pointer-events: none, so no ornament can ever swallow a tap. Ornament lives at
-   the edges — the centre of the page stays clean. */
-@utility page-surface {
-  position: relative;
-  background-color: var(--page);
-  isolation: isolate;
+/* ─── The flow: content in columns, layered over the leaves ─────────────── */
+.book-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: var(--pad-block) var(--pad-fore);
+  padding-top: calc(var(--pad-block) + var(--head-h));
+}
 
-  /* Foxing: warm blooms weighted toward the edges, never the middle. */
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background-image:
-      radial-gradient(
-        ellipse 12rem 8rem at 4% 12%,
-        rgb(138 98 32 / 0.07),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 9rem 11rem at 97% 34%,
-        rgb(162 75 50 / 0.06),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 14rem 7rem at 88% 91%,
-        rgb(138 98 32 / 0.06),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 8rem 8rem at 12% 82%,
-        rgb(59 47 42 / 0.05),
-        transparent 70%
-      );
+/* Unpaged is the default and the whole no-JS story: before hydration this is
+   ordinary content in normal flow, with nothing clipping it. */
+.book-flow {
+  min-inline-size: 0;
+  height: 100%;
+}
+
+.book-flow[data-paged] {
+  column-count: 2;
+  column-gap: var(--gutter-w);
+  column-fill: auto; /* fill the recto before starting the verso */
+  overflow: hidden; /* NOT clip: clip kills scrollWidth and hides pages */
+  scroll-behavior: smooth;
+  padding-inline: 0;
+  border-inline: 0;
+  overscroll-behavior-x: contain;
+}
+
+/* break-inside: avoid belongs on leaves that read as one physical object —
+   never on the containers that hold them, or a long one has nowhere to go. */
+.book-flow[data-paged] :is(li, tr, thead, figure, blockquote, label) {
+  break-inside: avoid;
+}
+
+.book-flow[data-paged] :is(ul, ol, table, tbody, form, fieldset, section, div) {
+  break-inside: auto;
+}
+
+.book-flow[data-paged] :is(h1, h2, h3, legend) {
+  break-after: avoid;
+}
+
+.book-flow[data-paged] p {
+  orphans: 2;
+  widows: 2;
+}
+
+.book-flow[data-paged] .on-page {
+  box-decoration-break: clone;
+}
+
+.book-turn {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(var(--pad-block) / 3);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+/* The running head sits outside the flow so it does not paginate. */
+.book-head {
+  position: absolute;
+  top: var(--pad-block);
+  left: var(--pad-fore);
+  right: var(--pad-fore);
+  z-index: 4;
+  height: var(--head-h);
+}
+
+/* ─── Mobile: one page at a time, same cover and edges ──────────────────── */
+@media (max-width: 47.999rem), (max-height: 30rem) {
+  :root {
+    --desk-pad: clamp(0.25rem, 1.2vmin, 0.75rem);
+    --cover-w: clamp(0.5rem, 1.4vmin, 0.875rem);
   }
 
-  /* Grain, warm directional light from above, and edge wear. The turbulence
-     tile is small and repeats; opacity is low enough that it reads as paper
-     rather than noise. Legibility beats atmosphere. */
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background-image:
-      radial-gradient(
-        ellipse 120% 80% at 50% -10%,
-        rgb(255 246 214 / 0.5),
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 100% 100% at 50% 50%,
-        transparent 55%,
-        rgb(43 33 26 / 0.16) 100%
-      ),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.32'/%3E%3C/svg%3E");
+  .book {
+    --paper-h: calc(var(--avail-h) - var(--chrome));
+    width: 100%;
+  }
+
+  .spread {
+    aspect-ratio: auto;
+    height: var(--paper-h);
+    grid-template-columns: 1fr;
+  }
+
+  .leaf-right {
+    display: none;
+  }
+
+  /* One page, so the shared light spans one page. */
+  .leaf-left::after {
     background-size:
       100% 100%,
       100% 100%,
-      120px 120px;
-    mix-blend-mode: multiply;
-    opacity: 0.55;
+      100% 100%,
+      100% 100%,
+      160px 160px;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+
+  /* The gutter becomes the bound edge of the single page. */
+  .page-gutter {
+    left: auto;
+    right: 0;
+    width: calc(var(--gutter-w) / 2);
+    background-position: left center;
+  }
+
+  .book-flow[data-paged] {
+    column-count: 1;
+    column-gap: 2rem;
+  }
+
+  .book-stage {
+    padding-right: calc(var(--gutter-w) / 2 + var(--pad-fore));
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  /* Multiply over a dark page would crush it to black; lighten the grain
-     instead so the texture still reads. */
-  .page-surface::after {
-    mix-blend-mode: soft-light;
-    opacity: 0.4;
+/* Too short to hold a page — landscape phone, or 400% zoom. Stop paginating
+   rather than clip: correctness wins over the object. */
+@media (max-height: 26rem) {
+  .book-flow[data-paged] {
+    column-count: 1;
+    overflow: visible;
+    scroll-behavior: auto;
   }
-}
 
-/* The gutter: a soft shadow down the left edge where the page meets the spine. */
-@utility page-gutter {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  width: 2.5rem;
-  pointer-events: none;
-  z-index: -1;
-  background-image: linear-gradient(
-    to right,
-    rgb(43 33 26 / 0.28),
-    rgb(43 33 26 / 0.08) 45%,
-    transparent 100%
-  );
-}
-
-/* Content raised ON the page: real shadow, no flat border. */
-@utility on-page {
-  background-color: var(--surface);
-  box-shadow:
-    0 1px 2px rgb(43 33 26 / 0.1),
-    0 4px 12px -4px rgb(43 33 26 / 0.18);
+  .spread {
+    aspect-ratio: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -196,7 +625,6 @@
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
